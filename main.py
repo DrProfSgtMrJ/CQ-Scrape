@@ -1,4 +1,3 @@
-from array import array
 from collections import defaultdict
 from selenium import webdriver
 from selenium.webdriver.common.by import By
