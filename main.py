@@ -10,7 +10,6 @@ import math
 
 player_set = set()
 matches = {}
-win = {}
 URL_MATCH_HISTORY = "https://championsqueue.lolesports.com/en-us/match-history"
 URL_MAIN = "https://championsqueue.lolesports.com/en-us/"
 
@@ -40,8 +39,7 @@ for n in names:
     #print("Adding: ", split_text[3])
     name = split_text[3]
     player_set.add(name)
-    matches[name] = defaultdict(list)
-    win[name] = defaultdict(int)
+    matches[name] = defaultdict(int)
 
 time.sleep(3)
 
@@ -84,17 +82,14 @@ for player in player_set:
     team_left = driver.find_elements(By.CSS_SELECTOR, "div[class ='team left")
 
     team_left_wins = []
-    team_right_wins = []
     for tl in team_left:
         try:
             tl.find_element(By.CLASS_NAME, "winner")
             #print("Left win")
             team_left_wins.append(1)
-            team_right_wins.append(0)
         except:
             #print("Right win")
             team_left_wins.append(0)
-            team_right_wins.append(1)
 
     # print("Clicked see more: ", iter, " times\n")
     # print("Collecting matches")
@@ -102,23 +97,43 @@ for player in player_set:
     match_num = 0
     num = 0
     num_ten = 0
+    team_left = []
+    team_right = []
+    on_team_left = False
     for n in match_names:
         match_num = math.floor(num / 10)
-        # print("Match: ", match_num + 1)
-        #print("Adding ", n.text, " to matches")
-        matches[player][match_num].append(n.text)
+        # is one left
+        if num_ten < 5:
+            if n.text.lower() == player.lower():
+                on_team_left = True
+            else:
+                team_left.append(n.text)
+        # is one right
+        else:
+            if n.text.lower() == player.lower():
+                on_team_left = False
+            if n.text.lower() != player.lower():
+                team_right.append(n.text)
 
-        if n.text.lower() == player.lower():
-            if num_ten < 5:
-                #print(player, " Left Team result: ", team_left_wins[match_num])
-                win[player][match_num] = team_left_wins[match_num]
-            else :
-                #print(player, " Right Team result: ", team_right_wins[match_num])
-                win[player][match_num] = team_right_wins[match_num]
+        if num_ten == 9: 
+            team_left_win = team_left_wins[match_num] == 1
+            print(player, "on team left: ", on_team_left)
+            print("Left team won?: ", team_left_win)
+            # on the left team and you won
+            if on_team_left and team_left_win:
+                for p in team_left:
+                    matches[player][p]+=1
+            # on the right team and you won
+            elif not on_team_left and not team_left_win:
+                for p in team_right:
+                    matches[player][p]+=1
+            team_left = []
+            team_right = []
+
         num = num + 1
         num_ten = (num_ten + 1) % 10
-    #print(matches[player])
     search_field.clear()
 
+print(matches)
 driver.close()
 
